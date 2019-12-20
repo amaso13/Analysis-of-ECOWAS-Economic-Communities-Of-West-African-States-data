@@ -2,70 +2,67 @@
 library(readr)
 install.packages("ggplot2")
 library("ggplot2")
-#getting the data
-Predict_Income<-read.csv(file="C:/Users/ADMIN/Desktop/DSU/Semesters/Fall 2017/INFS 830 Decision Support Systems/Assignment 1/HealthData.csv", header=TRUE, sep=",")
-# exploring data
-View(Predict_Income)
-str(Predict_Income)
-head(Predict_Income)
-summary(Predict_Income)
-#let's add new variable called logIncome
-log(Predict_Income$INCOME)
-Predict_Income$logIncome <- log(Predict_Income$INCOME)
-#check for the new variable logIncome
-head(Predict_Income)
-str(Predict_Income)
-table(Predict_Income$logIncome)
-#let now fit regression
-##Examine the data before fitting models
-##   Start by examining the data to check for problems.
-# summary of logIncome, AGE, EDUC, FEMALE, MARRIED, and HHKIDS columns, all rows
-sumar <- subset(Predict_Income, select = c("logIncome", "AGE", "EDUC", "FEMALE", "MARRIED", "HHKIDS"))
-summary(sumar)
-# correlation between logIncome, AGE, EDUC, FEMALE, MARRIED, and HHKIDS
-cor(sumar)
+#Getting the data
+Indicators<-read.csv(file="C:/Users/ADMIN/Desktop/DSU/Semesters/FALL 2016/INFS 805 Design Research Methods Wang/Final Paper/world-development-indicators/Indicators.csv", header=TRUE, sep=",")
 
-##Plot the data before fitting models
+#Exploring data
+str(Indicators)
+names(Indicators)
+head(Indicators)
+tail(Indicators)
+table(Indicators$Value)
 
-##   Plot the data to look for non-linear relationships etc.
+#Creating a dataframe called to store ECOWAS states members data
+ECOstates<- c("BEN", "BFA", "CPV", "CIV", "GMB", "GHA", "GIN", "GNB","LBR", "MLI", "NER", "NGA", "SEN", "SLE", "TGO")
+View(ECOstates)
+ECOIndicators <- subset(Indicators, Indicators$CountryCode %in% ECOstates)
+View(ECOIndicators)
 
-# scatter plot of the variables
-plot(sumar)
+#let's now define a data frame for each of our indicator that will be used
+#dataframe for GDP per capita
 
-## Linear regression example
-##  Linear regression models can be fit with the `lm()' function
-##  For example, we can use `lm' to predict SAT scores based on
-##     per-pupal expenditures:
+GDP_per_capita <- subset(ECOIndicators, ECOIndicators$IndicatorCode == "NY.GDP.PCAP.CD")
+View(GDP_per_capita)
+#let's now plot the dataframe for analysis
+#plot for GDP_per_capita
+ggplot(data = GDP_per_capita, aes(Year, Value)) +
+  geom_line(aes(color = CountryCode)) +
+  geom_smooth(stat = "summary", fun.y = mean, linetype = 2, size = 2) +
+  scale_x_continuous(breaks = seq(1960, 2015, 5)) +
+  ggtitle("GDP per capita") +
+  ylab("GDP per capita(USD)")
 
-# Fit our regression model
-logIncome.mod <- lm(logIncome ~ AGE + EDUC + FEMALE + MARRIED + HHKIDS, # regression formula
-              data=Predict_Income) # data set
-# Summarize and print the results
-summary(logIncome.mod) # show regression results
-#let's now add new column "agesq" to the mode
-##first we will need to create a new variable agesq
-Predict_Income$agesq <- Predict_Income$AGE*Predict_Income$AGE
-table(Predict_Income$agesq)
-str(Predict_Income)
+#dataframe for Population density (people per sq. km of land area)
 
-cor(subset(Predict_Income, select = c("logIncome", "AGE", "EDUC", "FEMALE", "MARRIED", "HHKIDS", "agesq")))
+population_density <- subset(ECOIndicators, ECOIndicators$IndicatorCode == "EN.POP.DNST")
+head(population_density)
+#plot for Population density (people per sq. km of land area)
+ggplot(data = population_density, aes(Year, Value)) +
+  geom_line(aes(color = CountryCode)) +
+  geom_smooth(stat = "summary", fun.y = mean, size = 2) +
+  scale_x_continuous(breaks = seq(1960, 2015, 5)) +
+  ggtitle("Population density") +
+  ylab("Population density (people per sq. km of land area)")
 
-##let's now add the variable to the model logIncome.mod
-logIncome.mod <- lm(logIncome ~ AGE + EDUC + FEMALE + MARRIED + HHKIDS + agesq, # regression formula
-                    data=Predict_Income) # data set
-summary(logIncome.mod)
-#now let's create a new variable FemaleAge and add it to the model
-##first, we need to create the variable FemaleAge
-Predict_Income$FemaleAge <- Predict_Income$FEMALE*Predict_Income$AGE
-table(Predict_Income$FemaleAge)
-##now, let's add that to our regression model logIncome
-logIncome.mod <- lm(logIncome ~ AGE + EDUC + FEMALE + MARRIED + HHKIDS + FemaleAge, # regression formula
-                    data=Predict_Income) # data set
-summary(logIncome.mod)
+#dataframe for Health expenditure, public (% of government expenditure
 
-# exploring the phenomenon "moral hazard"
-##let's compute a regression of DOCVIS on AGE, EDUC, FEMALE, MARRIED, INCOME, PUBLIC
-docvis.mod <- lm(DOCVIS ~ AGE + EDUC + FEMALE + MARRIED + INCOME + PUBLIC, # regression formula 
-                 data=Predict_Income) # data set
-summary(docvis.mod)
-q()
+health <- subset(ECOIndicators, ECOIndicators$IndicatorCode == "SH.XPD.PCAP") 
+View(health)
+#plot for Health expenditure, public (% of government expenditure)
+ggplot(data =  health, aes(Year, (Value / 1000000))) +
+  geom_line(aes(color = CountryCode)) +
+  scale_y_continuous(breaks = seq(0, 400, 50)) +
+  scale_x_continuous(breaks = seq(1960, 2015, 4)) +
+  ggtitle("Health expenditure, public") +
+  ylab("Health expenditure, public (% of government expenditure")
+
+#dataframe for Government Expenditure on Education, in % of GDP
+education <- subset(ECOIndicators, ECOIndicators$IndicatorCode == "SE.XPD.TOTL.GD.ZS")
+View(education)
+#plot for Government Expenditure on Education, in % of GDP
+ggplot(data =  education, aes(Year, (Value / 1000000))) +
+  geom_line(aes(color = CountryCode)) +
+  scale_y_continuous(breaks = seq(0, 400, 50)) +
+  scale_x_continuous(breaks = seq(1960, 2015, 4)) +
+  ggtitle("Government Expenditure on Education, in % of GDP") +
+  ylab("Education")
